@@ -4,7 +4,7 @@ const fs = require('fs'), path = require('path'), os = require('os'), crypto = r
 
 const PORT = process.env.PORT || 3000;
 const PIN = process.env.ACCESS_PIN || '';          // set this in your cloud dashboard
-const MAX_JOBS = +process.env.MAX_JOBS || 2;
+const MAX_JOBS = +process.env.MAX_JOBS || 1;
 const TMP = path.join(os.tmpdir(), 'avd');
 const EXTRA = (process.env.YTDLP_EXTRA ?? '--js-runtimes node').split(' ').filter(Boolean);
 if (process.env.COOKIES_FILE) EXTRA.push('--cookies', process.env.COOKIES_FILE);
@@ -67,9 +67,10 @@ app.post('/api/prepare', auth, (req, res) => {
   const job = { state: 'working', pct: 0, msg: 'Starting…', t: Date.now() };
   jobs.set(id, job);
 
+  const fmt = `bestvideo[height<=${h}]+bestaudio/best[height<=${h}]/bestvideo+bestaudio/best`;
   const args = ['--no-playlist', '--no-warnings', '--newline', ...EXTRA,
     ...(audio ? ['-x', '--audio-format', 'mp3', '--audio-quality', '0']
-              : ['-f', 'bv*+ba/b', '-S', `res:${h},vcodec:h264,acodec:aac`, '--merge-output-format', 'mp4']),
+              : ['-f', fmt, '--merge-output-format', 'mp4', '--audio-multistreams']),
     '-o', path.join(TMP, id + '.%(ext)s'), '--', url];
   const p = spawn('yt-dlp', args);
   let log = '';
